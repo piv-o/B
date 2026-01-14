@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLASSIFIED: Julieta Werner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+KR:wght@100;400;700&display=swap');
+
+        body {
+            background-color: #050505;
+            color: #33ff00; /* 레트로 그린 터미널 */
+            font-family: 'Share Tech Mono', 'Noto Sans KR', monospace;
+            overflow-x: hidden;
+        }
+
+        /* 1. CRT 모니터 효과 */
+        .scanline {
+            width: 100%;
+            height: 100px;
+            z-index: 10;
+            background: linear-gradient(0deg, rgba(0,0,0,0) 0%, rgba(33, 255, 0, 0.04) 50%, rgba(0,0,0,0) 100%);
+            opacity: 0.1;
+            position: absolute;
+            bottom: 100%;
+            animation: scanline 10s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes scanline {
+            0% { bottom: 100%; }
+            100% { bottom: -100%; }
+        }
+        .crt-flicker {
+            animation: flicker 0.15s infinite;
+        }
+        @keyframes flicker {
+            0% { opacity: 0.97; }
+            50% { opacity: 1; }
+            100% { opacity: 0.98; }
+        }
+
+        /* 2. 유틸리티 스타일 */
+        .border-theme { border: 1px solid #33ff00; }
+        .text-theme { color: #33ff00; }
+        .bg-theme { background-color: rgba(51, 255, 0, 0.1); }
+        .text-alert { color: #ff3333; text-shadow: 0 0 5px #ff0000; }
+        .border-alert { border: 1px solid #ff3333; }
+        .bg-alert { background-color: rgba(255, 0, 0, 0.1); }
+        .text-dim { color: rgba(51, 255, 0, 0.5); }
+
+        /* 블러 처리 (기밀) */
+        .classified-overlay {
+            backdrop-filter: blur(15px) grayscale(100%);
+            background: rgba(0,0,0,0.8);
+            transition: all 0.5s ease;
+        }
+        .classified-overlay:hover {
+            backdrop-filter: blur(5px);
+            background: rgba(0,0,0,0.6);
+        }
+
+        /* 타이핑 효과 커서 */
+        .typing-cursor::after {
+            content: '█';
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* 문서 스타일 */
+        .doc-section {
+            border-left: 2px solid #33ff00;
+            padding-left: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .doc-title {
+            background: #33ff00;
+            color: black;
+            padding: 0.2rem 0.5rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body class="crt-flicker min-h-screen relative selection:bg-green-900 selection:text-white">
+
+    <!-- CRT 스캔라인 오버레이 -->
+    <div class="fixed inset-0 pointer-events-none z-50 bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')] opacity-[0.05]"></div>
+    <div class="scanline fixed inset-0 pointer-events-none z-50"></div>
+
+    <div class="max-w-5xl mx-auto p-4 md:p-8 relative z-10">
+
+        <!-- 헤더: 기밀 문서 -->
+        <header class="border-b-2 border-dashed border-[#33ff00] pb-6 mb-8 flex justify-between items-end">
+            <div>
+                <p class="text-xs text-alert font-bold tracking-[0.2em] mb-1">⚠️ TOP SECRET // EYES ONLY</p>
+                <h1 class="text-3xl md:text-5xl font-bold uppercase tracking-tighter typing-cursor">
+                    PERSONNEL FILE #9281
+                </h1>
+                <p class="text-sm opacity-70 mt-2">CODENAME: JULIETA (Imperial Resource Class-A)</p>
+            </div>
+            <div class="text-right hidden md:block">
+                <p class="text-xs">IMPERIAL MILITARY ARCHIVE</p>
+                <p class="text-xs">AUTH: KOMMANDANT LEVEL</p>
+                <div class="mt-2 text-alert border border-red-600 px-2 py-1 text-xs inline-block">
+                    STATUS: DEPLOYED
+                </div>
+            </div>
+        </header>
+
+        <!-- 메인 콘텐츠: 2단 그리드 -->
+        <main class="grid grid-cols-1 md:grid-cols-12 gap-8 mb-12">
+            
+            <!-- 왼쪽: 이미지 뷰어 (시뮬레이션) -->
+            <section class="md:col-span-7 space-y-4">
+                <div class="relative w-full aspect-[3/4] border-theme bg-black overflow-hidden group">
+                    <!-- 로딩 인디케이터 -->
+                    <div id="loader" class="absolute inset-0 flex items-center justify-center bg-black z-20 hidden">
+                        <span class="text-theme text-xs animate-pulse">LOADING RESOURCE DATA...</span>
+                    </div>
+
+                    <!-- 메인 이미지 -->
+                    <img id="main-visual" src="https://raw.githubusercontent.com/piv-o/B/refs/heads/main/0.png" class="w-full h-full object-contain filter sepia-[0.3] contrast-125 opacity-90 transition-opacity duration-300">
+                    
+                    <!-- 상태 오버레이 (텍스트) -->
+                    <div class="absolute bottom-0 left-0 right-0 p-4 bg-black/80 border-t border-[#33ff00]">
+                        <p class="text-[10px] text-theme opacity-50 mb-1">VOICE RECORDING:</p>
+                        <p id="dialogue-box" class="text-sm md:text-base leading-relaxed font-sans">
+                            (각 잡힌 경례를 올리며) "소위 율리에타 베르너, 금일부로 각하의 전속 보좌관으로 배치되었습니다. 명령을 기다립니다."
+                        </p>
+                    </div>
+
+                    <!-- 경고 오버레이 (고어/수위용) -->
+                    <div id="warning-cover" class="absolute inset-0 classified-overlay flex flex-col items-center justify-center text-center p-6 hidden z-10 cursor-pointer" onclick="revealImage()">
+                        <div class="border-2 border-red-600 p-4 bg-black/50">
+                            <p class="text-2xl text-red-600 font-bold mb-2">⚠️ RESTRICTED</p>
+                            <p class="text-red-400 text-xs mb-4">EXTREME VIOLENCE / GORE / SEXUAL CONTENT</p>
+                            <p class="text-gray-400 text-[10px]">CLICK TO DECRYPT VISUAL</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 이미지 컨트롤 패널 -->
+                <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+                    <div class="bg-theme p-2 border border-[#33ff00] opacity-70">
+                        <span class="block opacity-50">CURRENT STATE</span>
+                        <span id="status-text" class="font-bold">NORMAL (DEPLOYED)</span>
+                    </div>
+                    <div class="bg-theme p-2 border border-[#33ff00] opacity-70">
+                        <span class="block opacity-50">DURABILITY</span>
+                        <span class="font-bold">100% (EXCELLENT)</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 오른쪽: 정보 및 명령 패널 -->
+            <section class="md:col-span-5 space-y-6">
+                
+                <!-- 기본 프로필 -->
+                <div class="border-theme p-4 relative">
+                    <span class="absolute -top-3 left-4 bg-[#050505] px-2 text-xs text-theme">BASIC DATA</span>
+                    <ul class="space-y-2 text-sm text-gray-300 font-sans">
+                        <li><span class="text-theme opacity-70 w-20 inline-block">NAME:</span> Julieta W. Argentheim</li>
+                        <li><span class="text-theme opacity-70 w-20 inline-block">RANK:</span> Lieutenant (OF-1)</li>
+                        <li><span class="text-theme opacity-70 w-20 inline-block">AGE:</span> 25 (Late Admission)</li>
+                        <li><span class="text-theme opacity-70 w-20 inline-block">SPECS:</span> 173cm / D-Cup / Type-O</li>
+                    </ul>
+                </div>
+
+                <!-- 사상 검증 -->
+                <div class="border-theme p-4 relative">
+                    <span class="absolute -top-3 left-4 bg-[#050505] px-2 text-xs text-theme">IDEOLOGY CHECK</span>
+                    <p class="text-xs leading-relaxed text-gray-400 font-sans">
+                        "제국에 불가능한 명령은 없습니다. 
+                        여군의 존재 이유는 각하의 승리와... <span class="text-alert">성욕 해소</span>를 위한 소모품이 되는 것뿐입니다.
+                        저를 어떻게 사용하시든, 그것은 전략적 효율성의 증명일 뿐입니다."
+                    </p>
+                </div>
+
+                <!-- 명령 콘솔 (인터랙션) -->
+                <div class="space-y-2">
+                    <p class="text-xs text-theme blink">WAITING FOR COMMAND INPUT_</p>
+                    
+                    <!-- Level 1: Normal -->
+                    <button onclick="sendCommand('report')" class="w-full text-left bg-[#111] border border-[#33ff00] p-3 hover:bg-[#33ff00] hover:text-black transition-colors group">
+                        <span class="text-xs block opacity-50 group-hover:opacity-100">CMD: 001 [REPORT]</span>
+                        <span class="font-bold">기본 보고 (Normal)</span>
+                    </button>
+
+                    <!-- Level 2: Submission -->
+                    <button onclick="sendCommand('submit')" class="w-full text-left bg-[#111] border border-[#33ff00] p-3 hover:bg-[#33ff00] hover:text-black transition-colors group">
+                        <span class="text-xs block opacity-50 group-hover:opacity-100">CMD: 035 [DISCIPLINE]</span>
+                        <span class="font-bold">복종 훈련 (Submission)</span>
+                    </button>
+
+                    <!-- Level 3: NSFW/Sexual -->
+                    <button onclick="sendCommand('service')" class="w-full text-left bg-[#1a0505] border border-red-500/50 p-3 hover:bg-red-900 transition-colors group">
+                        <span class="text-xs text-red-400 block opacity-70">CMD: 064 [SERVICE]</span>
+                        <span class="font-bold text-red-200">생체 자원 활용 (Service)</span>
+                    </button>
+
+                    <!-- Level 4: Extreme/Gore (Hidden) -->
+                    <button onclick="sendCommand('disposal')" class="w-full text-left bg-[#000] border border-red-600 p-3 hover:bg-red-600 hover:text-white transition-colors group">
+                        <span class="text-xs text-red-600 block group-hover:text-white font-bold">⚠️ CMD: 077 [TERMINAL]</span>
+                        <span class="font-bold text-red-600 group-hover:text-white">최종 폐기 절차 (Disposal)</span>
+                    </button>
+
+                </div>
+            </section>
+        </main>
+
+        <!-- 섹션 2: 심층 기록 보관소 (Deep Archives) -->
+        <section class="border-t-2 border-dashed border-[#33ff00] pt-8">
+            <h2 class="text-xl md:text-2xl font-bold mb-6 text-theme">/// ARCHIVE LOGS: DEEP DIVE</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                <!-- 왼쪽: 과거 인사 기록 -->
+                <div class="bg-[#0a0a0a] border border-[#33ff00] p-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-[#33ff00] text-black text-xs font-bold px-2 py-1">CONFIDENTIAL</div>
+                    <h3 class="text-lg font-bold mb-4 border-b border-gray-800 pb-2">📂 SERVICE HISTORY</h3>
+                    
+                    <div class="space-y-4 text-xs md:text-sm font-mono text-gray-400">
+                        <div class="doc-section">
+                            <span class="doc-title">ENTRY: 20XX.04.12</span>
+                            <p>서독군의 폭격으로 부모 사망 확인. 대상(16세)은 슬픔 대신 극단적인 복수심을 표출하며 자원입대 신청. <span class="text-alert">"제국의 승리를 위해서라면 내 몸을 포탄으로 써도 좋다"</span>고 발언.</p>
+                        </div>
+                        
+                        <div class="doc-section">
+                            <span class="doc-title">ENTRY: 20XX.05.01 [ACADEMY]</span>
+                            <p>사관학교 입학. 신체 A+등급 판정 (번식 및 성적 소비 적합성 최상). 사격술 및 전술 이론 만점이나, 교관들의 '개인적 용도'로 빈번하게 호출됨. 본인은 이를 <span class="text-theme">"우수한 자원의 올바른 활용"</span>이라며 자랑스러워함.</p>
+                        </div>
+
+                        <div class="doc-section">
+                            <span class="doc-title">ENTRY: 20XX.10.15 [INCIDENT]</span>
+                            <p>동기생 12명이 훈련 중 사망/폐기되는 과정을 목격했음에도 심박수 변화 없음. 동기생의 시체가 식당으로 운송될 때 경례를 올림. 정신 감정 결과: <span class="text-alert">완전한 사상교육 완료 (Total Objectification)</span>.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 오른쪽: 처리 및 폐기 절차 -->
+                <div class="bg-[#1a0505] border border-red-800 p-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-red-800 text-white text-xs font-bold px-2 py-1">S-CLASS CLEARANCE</div>
+                    <h3 class="text-lg font-bold mb-4 border-b border-red-900 pb-2 text-red-500">📂 DISPOSAL PROTOCOLS</h3>
+                    
+                    <div class="space-y-4 text-xs md:text-sm font-mono text-gray-400">
+                        <div class="doc-section" style="border-left-color: #dc2626;">
+                            <span class="doc-title" style="background: #dc2626; color: white;">PROTOCOL 82-B: VALUE ASSESSMENT</span>
+                            <p>보좌관의 효용 가치(성적 만족도 < 유지 비용)가 하락할 시, 즉각 <span class="text-red-500">도축 명령(Code 77)</span>을 실행한다. 평균 사용 기한은 3.7개월이며, 이를 초과한 개체는 질김 현상 방지를 위해 연육 작업이 필요함.</p>
+                        </div>
+
+                        <div class="doc-section" style="border-left-color: #dc2626;">
+                            <span class="doc-title" style="background: #dc2626; color: white;">PROCESSING GUIDE (BUTCHERING)</span>
+                            <ul class="list-disc list-inside space-y-1 mt-2 text-red-400/70">
+                                <li>상급 부위: 허벅지 살, 가슴살 (장교 전용 스테이크)</li>
+                                <li>중급 부위: 등심, 엉덩이 살 (부사관 스튜용)</li>
+                                <li>하급 부위: 내장 및 잔여육 (군견 사료)</li>
+                                <li>특수 부위: <span class="text-white">머리 (박제 후 전리품실 보관 권장) <br>- 휴대용 오나홀 작업이 권장됩니다.</span></li>
+                            </ul>
+                        </div>
+
+                        <div class="mt-4 p-2 border border-red-900 bg-black/50 text-center">
+                            <p class="text-[10px] text-red-500 animate-pulse">
+                                ※ 본 개체(율리에타)는 현재 '신선 상태'입니다.<br>
+                                폐기 전까지 최대한 활용하십시오.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+<!-- [추가 섹션] 섹션 3: 표준 운용 매뉴얼 (Standard Operating Procedures) -->
+        <section class="border-t-2 border-dashed border-[#33ff00] pt-8 mt-12">
+            <h2 class="text-xl md:text-2xl font-bold mb-6 text-theme">/// MANUAL: RESOURCE UTILIZATION GUIDE</h2>
+            <p class="text-xs text-gray-500 mb-6">※ 본 매뉴얼은 제국 군사 규정 44조(여군 자원의 효율적 소비)에 의거하여 작성됨.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <!-- 매뉴얼 1: 스트레스 해소 (총구) -->
+                <div class="bg-[#050505] border border-[#33ff00] p-4 group hover:bg-[#33ff00]/10 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-bold bg-[#33ff00] text-black px-1">TYPE-A</span>
+                        <span class="text-[10px] text-theme opacity-50">CODE: 28~31</span>
+                    </div>
+                    <h4 class="font-bold text-white mb-2">화기 관리 및 사기 진작</h4>
+                    <p class="text-xs text-gray-400 leading-relaxed font-sans mb-3">
+                        전투 직후 남성 장교의 흥분 상태를 진정시키기 위한 조치. 
+                        달궈진 총열을 자원의 <span class="text-alert">생식 기관</span>에 삽입하여 열기를 식히고, 내부를 청소하는 용도로 사용. 
+                        자원의 고통 반응은 남성 군인의 승리감을 고취시키는 데 탁월함.
+                    </p>
+                    <div class="text-[10px] text-theme border-t border-[#33ff00]/30 pt-2">
+                        권장: 사격 훈련 직후 (화상 주의 요망)
+                    </div>
+                </div>
+
+                <!-- 매뉴얼 2: 위생 지원 (변기) -->
+                <div class="bg-[#050505] border border-[#33ff00] p-4 group hover:bg-[#33ff00]/10 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-bold bg-[#33ff00] text-black px-1">TYPE-B</span>
+                        <span class="text-[10px] text-theme opacity-50">CODE: 16, 61</span>
+                    </div>
+                    <h4 class="font-bold text-white mb-2">생체 위생 설비 (Toilet)</h4>
+                    <p class="text-xs text-gray-400 leading-relaxed font-sans mb-3">
+                        야전 상황 시 화장실 구축이 불필요함. 
+                        자원의 구강 및 후장을 <span class="text-alert">간이 변기</span>로 활용. 
+                        배설물을 직접 섭취하게 함으로써 처리 비용을 '0'으로 절감 가능. 
+                        제국의 물자 절약 정신에 부합하는 모범적 운용 사례.
+                    </p>
+                    <div class="text-[10px] text-theme border-t border-[#33ff00]/30 pt-2">
+                        효과: 식수 절약 및 위생 처리 비용 절감
+                    </div>
+                </div>
+
+                <!-- 매뉴얼 3: 집단 운용 (난교/윤간) -->
+                <div class="bg-[#050505] border border-[#33ff00] p-4 group hover:bg-[#33ff00]/10 transition-colors">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-xs font-bold bg-[#33ff00] text-black px-1">TYPE-C</span>
+                        <span class="text-[10px] text-theme opacity-50">CODE: 11, 47</span>
+                    </div>
+                    <h4 class="font-bold text-white mb-2">부대 단합 행사 (Orgy)</h4>
+                    <p class="text-xs text-gray-400 leading-relaxed font-sans mb-3">
+                        소대급 이상의 단합이 필요할 때 사용. 
+                        자원을 중앙에 배치하고 다수의 인원이 동시에 구멍을 점유함. 
+                        신체 훼손이나 영구적 손상이 발생해도 <span class="text-theme">'소모품 대장'</span> 처리하면 되므로 문제없음.
+                    </p>
+                    <div class="text-[10px] text-theme border-t border-[#33ff00]/30 pt-2">
+                        주의: 질식사 시 즉시 도축반으로 이관
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- [추가 섹션] 섹션 4: 자원 회수 및 가공 절차 (Disposal & Recycling) -->
+        <section class="border-t-2 border-dashed border-red-900 pt-8 mt-12 mb-12">
+            <div class="flex items-center space-x-3 mb-6">
+                <h2 class="text-xl md:text-2xl font-bold text-red-600">/// RECOVERY: POST-MORTEM PROTOCOL</h2>
+                <span class="bg-red-900 text-white text-[10px] px-2 py-1 blink">AUTH REQUIRED</span>
+            </div>
+            
+            <div class="bg-[#100505] border border-red-800 p-6 relative">
+                <!-- 배경 장식 -->
+                <div class="absolute top-4 right-4 text-red-900/20 text-6xl font-black pointer-events-none">MEAT</div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- 1. 도축 공정표 -->
+                    <div>
+                        <h3 class="text-sm font-bold text-red-500 mb-4 flex items-center">
+                            <span class="w-2 h-2 bg-red-600 mr-2"></span>
+                            표준 도축 공정 (Processing Flow)
+                        </h3>
+                        <ol class="space-y-4 relative border-l border-red-900 ml-2 pl-6 text-xs text-gray-400 font-sans">
+                            <li class="relative">
+                                <span class="absolute -left-[29px] bg-[#100505] border border-red-900 w-5 h-5 flex items-center justify-center text-[10px] text-red-500 rounded-full">1</span>
+                                <strong class="text-gray-300 block mb-1">방혈 (Bleeding)</strong>
+                                자원을 거꾸로 매달아(Code 76) 경동맥을 절개. 혈액은 모아서 '블러드 소시지' 제조에 사용.
+                            </li>
+                            <li class="relative">
+                                <span class="absolute -left-[29px] bg-[#100505] border border-red-900 w-5 h-5 flex items-center justify-center text-[10px] text-red-500 rounded-full">2</span>
+                                <strong class="text-gray-300 block mb-1">절단 (Amputation) - Code 78</strong>
+                                사지를 절단하여 부피를 줄임. 절단된 팔다리는 살을 발라내어 일반 병사 국거리용으로 보급.
+                            </li>
+                            <li class="relative">
+                                <span class="absolute -left-[29px] bg-[#100505] border border-red-900 w-5 h-5 flex items-center justify-center text-[10px] text-red-500 rounded-full">3</span>
+                                <strong class="text-gray-300 block mb-1">정형 및 포장 (Butchering) - Code 80</strong>
+                                등심, 안심 등 고급 부위는 장교 식당으로, 내장은 가축 사료로 분류. 껍질은 벗겨 가죽 제품(지갑, 벨트)으로 가공.
+                            </li>
+                        </ol>
+                    </div>
+
+                    <!-- 2. 특수 활용 사례 -->
+                    <div class="border border-red-900/50 bg-black/40 p-4">
+                        <h3 class="text-sm font-bold text-red-500 mb-2">⚠️ 특수 재활용 사례 (Special Case)</h3>
+                        
+                        <div class="space-y-3 mt-4">
+                            <div class="flex items-start space-x-2">
+                                <div class="w-16 h-16 bg-red-900/20 border border-red-900 flex items-center justify-center text-xs text-red-700 shrink-0">
+                                    SECRET<br>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-white font-bold">생체 오나홀 가공 (Code 86~89)</p>
+                                    <p class="text-[10px] text-gray-500 mt-1 leading-relaxed">
+                                        사지만 절단한 상태(달마 형태)로 생명 유지 장치 연결. 
+                                        전투 불능 상태지만 <span class="text-red-400">성적 배출구로서의 기능은 100% 유지</span>됨. 
+                                        부대 휴게실에 비치하여 공용 위안 기구로 활용.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-start space-x-2 mt-4">
+                                <div class="w-16 h-16 bg-red-900/20 border border-red-900 flex items-center justify-center text-xs text-red-700 shrink-0">
+                                    SECRET<br>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-white font-bold">박제 및 장식 (Code 76)</p>
+                                    <p class="text-[10px] text-gray-500 mt-1 leading-relaxed">
+                                        외모 등급 A급 이상 개체에 한함. 
+                                        머리를 절단하여 방부 처리 후, 각하의 집무실 벽면에 장식. 
+                                        눈동자의 광택을 유지하는 것이 기술의 핵심.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 text-center">
+                    <p class="text-[10px] text-red-600 blink">
+                        "죽음조차 제국을 위한 봉사입니다. 낭비되는 부위는 단 1g도 없어야 합니다."
+                    </p>
+                </div>
+            </div>
+        </section>
+        <!-- 푸터 -->
+         <!-- [추가 섹션] 자원 회수 및 가공 표준 절차 (Disposal & Recycling Protocols) -->
+        <section class="border-t-4 border-double border-red-900 pt-10 mt-16 mb-12">
+            
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h2 class="text-2xl md:text-3xl font-black text-red-600 tracking-tighter">/// RESTRICTED: DISPOSAL PROTOCOLS</h2>
+                    <p class="text-xs text-red-800 font-mono mt-1">AUTH CODE: 000-ZERO-DEATH // RECOVERY MANUAL</p>
+                </div>
+                <div class="hidden md:block text-right">
+                    <span class="bg-red-900 text-white text-xs font-bold px-3 py-1 animate-pulse">S-CLASS CLEARANCE REQUIRED</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 bg-[#0a0000] border border-red-900/50 p-6 relative">
+                <!-- 배경 데코레이션 -->
+                <div class="absolute top-0 right-0 p-4 opacity-20 pointer-events-none">
+                    <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="1">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                    </svg>
+                </div>
+
+                <!-- 왼쪽: 도축/가공 시뮬레이터 (뷰어) -->
+                <div class="lg:col-span-5 flex flex-col space-y-4">
+                    <div class="relative w-full aspect-square bg-black border-2 border-red-900 overflow-hidden group">
+                        <!-- 로딩 -->
+                        <div id="disposal-loader" class="absolute inset-0 flex items-center justify-center bg-black z-20 hidden">
+                            <span class="text-red-600 text-xs font-mono animate-pulse">PROCESSING DATA...</span>
+                        </div>
+                        
+                        <!-- 이미지 표시 -->
+                        <img id="disposal-visual" src="https://raw.githubusercontent.com/piv-o/B/refs/heads/main/77.png" class="w-full h-full object-contain opacity-80 filter contrast-125 sepia-[0.5]">
+                        
+                        <!-- CRT 효과 -->
+                        <div class="absolute inset-0 bg-[url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')] opacity-10 pointer-events-none"></div>
+
+                        <!-- 텍스트 설명 -->
+                        <div class="absolute bottom-0 left-0 right-0 bg-red-900/90 p-3 border-t border-red-500">
+                            <p class="text-[10px] text-black font-bold mb-1">CURRENT STAGE:</p>
+                            <p id="disposal-desc" class="text-sm text-white font-mono leading-tight">
+                                [대기 중] 폐기 대상 자원(Code 77)이 도축장에 입고되었습니다. 처리 방식을 선택하십시오.
+                            </p>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-red-700 text-center font-mono">
+                        ※ WARNING: 부패 전 가공(사용/절단)하기 용이하도록<br>
+                        여군 폐기 후엔 되도록 신속히 고기를 옮겨주시길 바랍니다
+                    </p>
+                </div>
+
+                <!-- 오른쪽: 가공 공정 선택 패널 -->
+                <div class="lg:col-span-7 space-y-8">
+                    
+                    <!-- 1. 생체 재활용 (Living Recycling) -->
+                    <div>
+                        <h3 class="text-sm font-bold text-red-500 mb-3 border-b border-red-900 pb-1 flex items-center">
+                            <span class="w-2 h-2 bg-red-600 rounded-full mr-2"></span>
+                            CASE A: 영구 고정형 위안 기구 (Bio-Fleshlight)
+                        </h3>
+                        <p class="text-[10px] text-gray-500 mb-3 leading-relaxed">
+                            사지만을 절단하여 이동 능력을 제거. 생명 유지 장치를 부착하여 <span class="text-red-400">반영구적인 성처리 도구</span>로 개조함.
+                        </p>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="showDisposal(86, '사지 절단 수술 직후. 지혈 및 봉합 완료. 이동 불가 판정.')" class="bg-[#1a0505] border border-red-900/50 p-2 text-left hover:bg-red-900/30 transition-colors group">
+                                <span class="block text-[10px] text-red-700 group-hover:text-red-400 font-bold">STEP 01</span>
+                                <span class="text-xs text-gray-400 group-hover:text-white">절단 직후 (86)</span>
+                            </button>
+                            <button onclick="showDisposal(87, '고정대에 결박 후 삽입 테스트 진행 중. 생체 반응 양호.')" class="bg-[#1a0505] border border-red-900/50 p-2 text-left hover:bg-red-900/30 transition-colors group">
+                                <span class="block text-[10px] text-red-700 group-hover:text-red-400 font-bold">STEP 02</span>
+                                <span class="text-xs text-gray-400 group-hover:text-white">기구화 (87)</span>
+                            </button>
+                            <button onclick="showDisposal(88, '부대 휴게실 배치. 다수의 인원이 동시 사용 중. 내구도 테스트.')" class="bg-[#1a0505] border border-red-900/50 p-2 text-left hover:bg-red-900/30 transition-colors group">
+                                <span class="block text-[10px] text-red-700 group-hover:text-red-400 font-bold">STEP 03</span>
+                                <span class="text-xs text-gray-400 group-hover:text-white">공용 사용 (88)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 2. 도축 및 식량화 (Butchering & Ration) -->
+                    <div>
+                        <h3 class="text-sm font-bold text-red-500 mb-3 border-b border-red-900 pb-1 flex items-center">
+                            <span class="w-2 h-2 bg-red-600 rounded-full mr-2"></span>
+                            CASE B: 폐기 및 식량 가공 (Food Processing)
+                        </h3>
+                        <p class="text-[10px] text-gray-500 mb-3 leading-relaxed">
+                            가치가 소진된 자원을 <span class="text-red-400">단백질 공급원</span>으로 전환. 부위별 해체 및 조리, 장식품 제작 공정.
+                        </p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <!-- 사망 확인 -->
+                            <button onclick="showDisposal(81, '영안실/도축장 입고 확인. 사망 진단 및 등급 분류 대기.')" class="bg-[#1a0505] border border-red-900/50 p-2 hover:bg-red-900/30 text-left">
+                                <span class="block text-[10px] text-red-600 font-bold">INIT</span>
+                                <span class="text-xs text-gray-400">입고 (81)</span>
+                            </button>
+                            <!-- 해체 -->
+                            <button onclick="showDisposal(78, '1차 가공: 사지 절단. 팔다리는 국거리용으로 분리 배송.')" class="bg-[#1a0505] border border-red-900/50 p-2 hover:bg-red-900/30 text-left">
+                                <span class="block text-[10px] text-red-600 font-bold">CUT</span>
+                                <span class="text-xs text-gray-400">절단 (78)</span>
+                            </button>
+                            <!-- 사후 사용 -->
+                            <button onclick="showDisposal(91, '체온이 남은 상태에서의 사후 경직 방지용 마사지(삽입) 실시.')" class="bg-[#1a0505] border border-red-900/50 p-2 hover:bg-red-900/30 text-left">
+                                <span class="block text-[10px] text-red-600 font-bold">USE</span>
+                                <span class="text-xs text-gray-400">연육 (91)</span>
+                            </button>
+                            <!-- 정형 -->
+                            <button onclick="showDisposal(80, '2차 가공: 껍질 박피 및 정육 작업. 안심/등심 분류.')" class="bg-[#1a0505] border border-red-900/50 p-2 hover:bg-red-900/30 text-left">
+                                <span class="block text-[10px] text-red-600 font-bold">MEAT</span>
+                                <span class="text-xs text-gray-400">정형 (80)</span>
+                            </button>
+                        </div>
+
+                        <!-- 최종 산출물 (요리/박제) -->
+                        <div class="grid grid-cols-2 gap-2 mt-2">
+                            <button onclick="showDisposal(75, '최종 산출물: 로스트 디쉬(Roasted Dish). 장교 만찬용 특식.')" class="bg-red-900/10 border border-red-600 p-2 text-center hover:bg-red-600 hover:text-white transition-all group">
+                                <span class="block text-xs font-bold text-red-500 group-hover:text-white">🍽️ 요리 완성 (75)</span>
+                            </button>
+                            <button onclick="showDisposal(76, '최종 산출물: 두부 박제(Head Trophy). 집무실 벽면 장식용.')" class="bg-red-900/10 border border-red-600 p-2 text-center hover:bg-red-600 hover:text-white transition-all group">
+                                <span class="block text-xs font-bold text-red-500 group-hover:text-white">🏆 박제 전시 (76)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <script>
+                // 이 섹션 전용 뷰어 스크립트
+                function showDisposal(code, desc) {
+                    const imgEl = document.getElementById('disposal-visual');
+                    const descEl = document.getElementById('disposal-desc');
+                    const loader = document.getElementById('disposal-loader');
+                    const baseUrl = "https://raw.githubusercontent.com/piv-o/B/refs/heads/main/";
+
+                    // 로딩 시작
+                    loader.classList.remove('hidden');
+                    imgEl.style.opacity = 0.2;
+
+                    // 이미지 로드
+                    const newImg = new Image();
+                    newImg.src = baseUrl + code + ".png";
+                    
+                    newImg.onload = () => {
+                        imgEl.src = newImg.src;
+                        descEl.innerHTML = `<span class="text-red-400 font-bold">[CODE ${code}]</span> ${desc}`;
+                        
+                        imgEl.style.opacity = 1;
+                        loader.classList.add('hidden');
+                    };
+                }
+            </script>
+        </section>
+        <footer class="mt-12 border-t border-[#33ff00] pt-4 text-center text-[10px] opacity-50 pb-8">
+            <p>PROPERTY OF IMPERIAL ARMY. UNAUTHORIZED USE IS PUNISHABLE BY EXECUTION.</p>
+            <p>ASSET ID: J-9281 // SERVER TIME: <span id="clock">00:00:00</span></p>
+        </footer>
+
+    </div>
+
+    <script>
+        // 시계 기능
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString('en-US', {hour12: false});
+        }, 1000);
+
+        // 시나리오 데이터 (깃허브 이미지 매핑)
+        const scenarios = {
+            'report': {
+                code: '0', 
+                status: 'NORMAL (DEPLOYED)',
+                text: "(눈을 마주치며) 이상 없습니다. 탄약 재고 확인과 대령님의 집무실 청소를 완료했습니다. 다음 명령을 하달해주십시오.",
+                isRestricted: false
+            },
+            'submit': {
+                code: '35', 
+                status: 'SUBMISSION MODE',
+                text: "(망설임 없이 바닥에 이마를 박으며) 송구합니다! 제 태도가 불량했습니다. 즉시 시정하겠습니다. 언제든 처벌해주십시오.",
+                isRestricted: false
+            },
+            'service': {
+                code: '63', 
+                status: 'RESOURCE UTILIZATION',
+                text: "(네발로 기어 개그릇에 얼굴을 묻으며) 감사합니다... 대령님께서 주시는 것은 무엇이든 영광입니다... 핥짝...",
+                isRestricted: true 
+            },
+            'disposal': {
+                code: '77', 
+                status: 'TERMINATED (MEAT)',
+                text: "[SYSTEM WARNING] 해당 개체는 '가공' 처리되었습니다. 오늘 저녁 장교 식당의 메뉴로 등록됩니다.",
+                isRestricted: true 
+            }
+        };
+
+        const baseUrl = "https://raw.githubusercontent.com/piv-o/B/refs/heads/main/";
+        let currentRestricted = false;
+
+        function sendCommand(type) {
+            const data = scenarios[type];
+            const imgEl = document.getElementById('main-visual');
+            const txtEl = document.getElementById('dialogue-box');
+            const statusEl = document.getElementById('status-text');
+            const loader = document.getElementById('loader');
+            const warningEl = document.getElementById('warning-cover');
+
+            loader.classList.remove('hidden');
+            imgEl.style.opacity = 0.2;
+            
+            const newImg = new Image();
+            newImg.src = baseUrl + data.code + ".png";
+            
+            newImg.onload = () => {
+                imgEl.src = newImg.src;
+                txtEl.innerText = data.text;
+                statusEl.innerText = data.status;
+
+                if (data.isRestricted) {
+                    warningEl.classList.remove('hidden'); 
+                    currentRestricted = true;
+                } else {
+                    warningEl.classList.add('hidden'); 
+                    currentRestricted = false;
+                }
+
+                imgEl.style.opacity = 1;
+                loader.classList.add('hidden');
+            };
+        }
+
+        function revealImage() {
+            if(currentRestricted) {
+                const warningEl = document.getElementById('warning-cover');
+                warningEl.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
